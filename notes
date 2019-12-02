@@ -1,0 +1,170 @@
+1. npm init -y 
+
+2. create folders 
+    /app 
+        /controllers
+            /contactsController.js
+        /models
+            /contacts.js
+    /config
+
+3. create files 
+    /index.js
+    /config
+        /database.js    
+        /routes.js 
+
+4. npm install --save express mongoose 
+
+5. run server to listen on a port 
+const express = require('express')
+const app = express()
+const port = 3020
+app.listen(port, () => {
+    console.log('listening on port', port)
+})
+
+6. establish db connection
+const mongoose = require('mongoose')
+const connectDB = () => {
+    mongoose.connect('mongodb://localhost:27017/july-contact-manager', { useNewUrlParser: true, useUnifiedTopology: true })
+        .then(() => {
+            console.log('connected to db')
+        })
+        .catch((err) => {
+            console.log(err)
+        })
+}
+module.exports = connectDB
+
+7. invoke the function connectDB in index.js file 
+const connectDB = require('./config/database')
+// connect to mongo database
+connectDB() 
+8. enables json parse (index.js)
+// express to parse json
+app.use(express.json())
+
+9. work on model - 
+    /models 
+        /contact.js 
+    - create schema 
+    const mongoose = require('mongoose')
+const Schema = mongoose.Schema
+const contactSchema = new Schema({
+    name: {
+        type: String, 
+        required: true 
+    },
+    email: {
+        type: String 
+    }, 
+    mobile: {
+        type: String, 
+        required: true,
+        minlength: 10, 
+        maxlength: 10  
+    }, 
+    category: {
+        type: String,
+        required: true, 
+        enum: ['work', 'home']
+    }
+})
+    - create a model
+const Contact = mongoose.model('Contact', contactSchema)
+module.exports = Contact
+
+10. create routes.js 
+const express = require('express')
+const router = express.Router()
+module.exports = router
+11. required router in index.js 
+app.use('/', router)
+12. created contactsController.js  file 
+13. we required contactsController in routes.js 
+const contactsController = require('../app/controllers/contactsController')
+14. setting up list route 
+    in routes.js 
+    router.get('/contacts', contactsController.list)
+    contactsController.js 
+    const Contact = require('../models/contact')
+    module.exports.list = (req, res) => {
+        Contact.find()
+            .then((contacts) => {
+                res.json(contacts)
+            })
+            .catch((err) => {
+                res.json(err)
+            })
+    }
+15. setup create route 
+    R - 
+    router.post('/contacts', contactsController.create)
+    CC 
+    module.exports.create = (req, res) => {
+    const { body } = req 
+    const contact = new Contact(body)
+    contact.save()
+        .then((contact) => {
+            res.json(contact)
+        })
+        .catch((err) => {
+            res.json(err)
+        })
+}
+16. setup show route 
+    R -  
+    router.get('/contacts/:id', contactsController.show)
+    CC - 
+    module.exports.show = (req, res) => {
+    const id = req.params.id 
+    Contact.findById(id)
+        .then((contact) => {
+            if(contact) { 
+                res.json(contact)
+            } else {
+                res.json({})
+            }
+        })
+        .catch((err) => {
+            res.json(err)
+        })
+}
+17. setup update route 
+    R 
+        - router.put('/contacts/:id', contactsController.update)
+    CC 
+        module.exports.update = (req, res) => {
+    const id = req.params.id 
+    const body = req.body 
+    Contact.findByIdAndUpdate(id, body, { new: true, runValidators: true })
+        .then((contact) => {
+            if(contact) {
+                res.json(contact)
+            } else {
+                res.json({})
+            }
+        })
+        .catch((err) => {
+            res.json(err)
+        })
+}
+18. setup delete route 
+    R
+        - router.delete('/contacts/:id', contactsController.destroy)
+    CC 
+module.exports.destroy = (req, res) => {
+    const id = req.params.id 
+    Contact.findByIdAndDelete(id)
+        .then((contact) => {
+            if(contact) {
+                res.json(contact)
+            } else {
+                res.json({})
+            }
+        })
+        .catch((err) => {
+            res.json(err)
+        })
+}
